@@ -1,0 +1,149 @@
+const BASE = 'https://api.apify.com/v2'
+const TOKEN = process.env.APIFY_TOKEN!
+
+export interface NormalizedContent {
+  platform: 'youtube' | 'x'
+  contentUrl: string
+  creatorHandle: string
+  title: string
+  primaryText: string
+  rawComments: string[]   // existing audience comments from the platform
+}
+
+function isYouTubeVideo(url: string): boolean {
+  // Must be a specific video: watch?v=, youtu.be/, /shorts/, /live/
+  return /youtube\.com\/watch\?.*v=|youtu\.be\/[a-zA-Z0-9_-]+|youtube\.com\/(shorts|live)\//.test(url)
+}
+
+function isXPost(url: string): boolean {
+  // Must be a specific tweet/post: /status/
+  return /x\.com\/.+\/status\/|twitter\.com\/.+\/status\//.test(url)
+}
+
+function detectPlatform(url: string): 'youtube' | 'x' | null {
+  if (/youtube\.com|youtu\.be/.test(url)) return 'youtube'
+  if (/x\.com|twitter\.com/.test(url)) return 'x'
+  return null
+}
+
+async function runActorSync(actorId: string, input: Record<string, unknown>): Promise<unknown[]> {
+  // run-sync-get-dataset-items waits for the actor and returns items directly
+  const res = await fetch(
+    `${BASE}/acts/${actorId}/run-sync-get-dataset-items?token=${TOKEN}&timeout=120&memory=512`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    }
+  )
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Apify actor ${actorId} failed: ${res.status} ${text}`)
+  }
+
+  return res.json() as Promise<unknown[]>
+}
+
+export async function scrapeYouTube(url: string): Promise<NormalizedContent> {
+  const items = (await runActorSync('h7sDV53CddomktSi5', {
+    startUrls: [{ url }],
+    maxResults: 1,
+    subtitles: true,
+    maxComments: 15,
+  })) as Record<string, unknown>[]
+
+  if (!items.length) throw new Error('YouTube scraper returned no results')
+
+  const item = items[0]
+  const subtitleText = extractSubtitles(item)
+  const description = (item.description as string) ?? ''
+  const title = (item.title as string) ?? 'Untitled'
+  const channelName = (item.channelName as string) ?? (item.channel as string) ?? 'unknown'
+
+  const primaryText = subtitleText
+    ? `TITLE: ${title}\n\nTRANSCRIPT:\n${subtitleText}`
+    : `TITLE: ${title}\n\nDESCRIPTION:\n${description}`
+
+  // Extract comments if the scraper returned them
+  const rawComments = extractComments(item)
+
+  return {
+    platform: 'youtube',
+    contentUrl: url,
+    creatorHandle: `@${channelName.replace(/\s+/g, '').toLowerCase()}`,
+    title,
+    primaryText,
+    rawComments,
+  }
+}
+
+function extractComments(item: Record<string, unknown>): string[] {
+  const comments = item.comments ?? item.commentsData ?? item.topComments
+  if (!comments || !Array.isArray(comments)) return []
+  return (comments as Record<string, unknown>[])
+    .map((c) => (typeof c === 'string' ? c : ((c.text ?? c.textDisplay ?? c.comment) as string) ?? ''))
+    .filter((t) => t.trim().length > 0)
+    .slice(0, 15)
+}
+
+function extractSubtitles(item: Record<string, unknown>): string {
+  // Apify youtube-scraper returns subtitles as array of {text, start, dur} objects
+  const subtitles = item.subtitles as Record<string, unknown>[] | string | undefined
+  if (!subtitles) return ''
+  if (typeof subtitles === 'string') return subtitles
+  if (Array.isArray(subtitles)) {
+    return subtitles
+      .map((s) => (typeof s === 'string' ? s : (s.text as string) ?? ''))
+      .join(' ')
+      .replace(/\[.*?\]/g, '') // strip [Music] etc
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+  return ''
+}
+
+export async function scrapeXThread(url: string): Promise<NormalizedContent> {
+  const items = (await runActorSync('61RPP7dywgiy0JPD0', {
+    urls: [url],
+    maxTweetsPerQuery: 20,
+    includeReplies: false,
+  })) as Record<string, unknown>[]
+
+  if (!items.length) throw new Error('X scraper returned no results')
+
+  const root = items[0]
+  const author = (root.author as Record<string, string>)?.userName ??
+    (root.user as Record<string, string>)?.screen_name ?? 'unknown'
+
+  const allText = items
+    .map((t) => (t.text as string) ?? (t.full_text as string) ?? '')
+    .filter(Boolean)
+    .join('\n\n')
+
+  // Replies to the thread are comments; exclude the root author's own tweets
+  const rawComments = items
+    .slice(1)
+    .map((t) => (t.text as string) ?? (t.full_text as string) ?? '')
+    .filter(Boolean)
+    .slice(0, 15)
+
+  const title = `Thread by @${author}`
+
+  return {
+    platform: 'x',
+    contentUrl: url,
+    creatorHandle: `@${author}`,
+    title,
+    primaryText: `CREATOR: @${author}\nPLATFORM: X/Twitter\n\nTHREAD:\n${allText}`,
+    rawComments,
+  }
+}
+
+export async function scrapeContent(url: string): Promise<NormalizedContent> {
+  const platform = detectPlatform(url)
+  if (!platform) throw new Error('Unsupported URL. Paste a YouTube or X/Twitter link.')
+  return platform === 'youtube' ? scrapeYouTube(url) : scrapeXThread(url)
+}
+
+export { detectPlatform, isYouTubeVideo, isXPost }
