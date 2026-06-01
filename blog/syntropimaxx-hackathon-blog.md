@@ -117,20 +117,28 @@ Creator pastes URL
        │
        ├─► InsForge DB ── persists content item + blueprint
        │
-       └─► Nebius Qwen3-32B (×N in parallel)
-             ── scores each comment on 8 principles
-             ── avg score → A–F grade
-             ── generates per-comment feedback
-                      │
-                      ▼
+       └─► Daytona Sandbox (ephemeral isolated container)
+             │
+             └─► Nebius Qwen3-32B (×N in parallel)
+                   ── scores each comment on 8 principles
+                   ── avg score → A–F grade
+                   ── generates per-comment feedback
+                            │
+                            ▼
+                   Daytona Sandbox destroyed
+                            │
+                            ▼
              CommentGradingFeed + VibeReport
+             + "Daytona sandbox" badge in UI
 ```
 
 A few technical choices worth calling out:
 
 **Two LLMs, two jobs.** We use Llama-3.3-70B for the Vibe Blueprint generation — it's creative, contextual work where reasoning depth matters. We use Qwen3-32B as the judge — it's fast, structured, and its thinking-mode output (`<think>...</think>`) can be stripped to get clean JSON in under 1 second per comment.
 
-**Parallel evaluation.** All comments are graded simultaneously via `Promise.allSettled`. For 8 demo comments, the full evaluation completes in under 2 seconds.
+**Daytona as the evaluation runtime.** Every audit spins up an ephemeral Daytona sandbox, runs the HumaneBench evaluation inside it, then destroys the container. The eval script (`lib/daytona.ts`) is a self-contained Node.js ESM module written to the sandbox via base64 — no npm installs, just Node 25's built-in `fetch`. This gives us three things: *isolation* (no cross-contamination between audits), *reproducibility* (identical environment every time), and *security* (LLM API keys are injected at runtime per-sandbox, never shared across calls). If Daytona is unavailable, the system falls back to direct in-process evaluation with no creator-visible degradation. When a sandbox was used, the UI shows a sky-blue "Daytona sandbox" badge on the Comment Grading Feed.
+
+**Parallel evaluation.** All comments are graded simultaneously via `Promise.allSettled` — inside the Daytona sandbox. For 8 demo comments, the full evaluation completes in under 2 seconds.
 
 **No hardcoded grades.** The demo comments (`DEMO_COMMENTS` in `lib/grader.ts`) are evaluated fresh every time via HumaneBench — not served from a cache. This means the grades reflect the actual creator's blueprint context, not a static dataset.
 
@@ -148,7 +156,8 @@ A few technical choices worth calling out:
 | Object storage | Tigris (S3-compatible) |
 | Database / BaaS | InsForge (Postgres) |
 | Deployment | Vercel via InsForge CLI |
-| Dev environments | Daytona (one-command reproducible containers) |
+| Sandbox runtime | Daytona (isolated eval containers per audit) |
+| Dev environments | Daytona (one-command reproducible workspaces) |
 
 ---
 
@@ -178,6 +187,8 @@ Every comment with a color-coded grade badge, 8 principle dots (green = passed, 
 **Context is everything.** The same comment is benign on one video and harmful on another. A grader without context is just a sentiment classifier. The Vibe Blueprint is what makes this genuinely useful.
 
 **Speed unlocks UX.** Our first pass used DeepSeek-V3 as the judge model — 45 seconds per evaluation. Switching to Qwen3-32B dropped that to under 1 second. The difference between "wait 7 minutes" and "see results instantly" is the difference between a feature nobody uses and a feature that changes behavior.
+
+**Sandbox-per-request is a real architecture pattern.** We initially graded comments directly in-process. Moving to Daytona sandboxes — one ephemeral container per audit — was a small code change but a meaningful architectural shift. Each evaluation now runs in an identical, isolated environment with no shared state between requests. For an LLM-based evaluation system where you're passing API credentials and sensitive content into a script, that isolation isn't a nice-to-have. The Daytona SDK made spinning up and destroying sandboxes cheap enough that it's the default path, not an occasional hardening step.
 
 **The comment section is a community health metric.** A creator's grade distribution tells you more about the health of their community than subscriber count, view count, or engagement rate combined. It's a qualitative signal that the algorithm will never surface — but it's the one that predicts creator longevity.
 
