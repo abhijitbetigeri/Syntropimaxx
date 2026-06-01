@@ -1,6 +1,6 @@
 # We Built an AI That Grades Your YouTube Comments Like a Teacher — And It Knows When Your Audience Is Hurting You
 
-**🎥 [Watch the demo](https://www.loom.com/share/bfdfbb55f4514e119382189e68ab739a) · 🚀 [Try it live](https://23hpjej3.insforge.site) · 💻 [GitHub](https://github.com/abhijitbetigeri/Syntropimaxx)**
+**🎥 [Watch the demo](https://www.loom.com/share/bfdfbb55f4514e119382189e68ab739a) · 💻 [GitHub](https://github.com/abhijitbetigeri/Syntropimaxx)**
 
 ---
 
@@ -251,10 +251,6 @@ Every comment with a color-coded grade badge, 8 principle dots (green = passed, 
 ---
 
 ## Try It
-
-**Live demo:** [https://23hpjej3.insforge.site](https://23hpjej3.insforge.site)
-
-Paste any YouTube video URL or X/Twitter post and see your comment section graded in seconds. The demo data uses a burnout video and a founder vulnerability thread — two content types where the signal/noise problem is most acute.
 
 **Demo video:** [Watch on Loom](https://www.loom.com/share/bfdfbb55f4514e119382189e68ab739a)
 
