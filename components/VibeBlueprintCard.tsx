@@ -41,7 +41,7 @@ export default function VibeBlueprintCard({ blueprint, creatorHandle, platform }
   const emotion = EMOTIONAL_COLORS[blueprint.vibe_state.emotional_context] ?? EMOTIONAL_COLORS.technical
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-[#0d0d22] overflow-hidden flex flex-col">
+    <div className="rounded-2xl border border-white/[0.08] bg-[#1e2048] overflow-hidden flex flex-col">
       {/* Gradient header */}
       <div className="relative px-5 py-5 bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-700 overflow-hidden">
         <div className="absolute inset-0 opacity-20"
@@ -85,15 +85,6 @@ export default function VibeBlueprintCard({ blueprint, creatorHandle, platform }
           </div>
         </Section>
 
-        <Section label="Prompt Chips" principle={PRINCIPLE_LABELS[blueprint.contextual_prompts.humanebench_principle]}>
-          <div className="flex flex-wrap gap-2">
-            {blueprint.contextual_prompts.prompt_chips.map((chip) => (
-              <span key={chip} className="inline-block px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-300 text-xs font-medium border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors cursor-default">
-                {chip}
-              </span>
-            ))}
-          </div>
-        </Section>
       </div>
     </div>
   )

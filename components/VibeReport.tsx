@@ -44,7 +44,7 @@ export default function VibeReport({ analytics, creatorHandle }: Props) {
     communityAlignmentPct >= 50 ? '→ Neutral' : '↓ Risk'
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-[#0d0d22] overflow-hidden">
+    <div className="rounded-2xl border border-white/[0.08] bg-[#1e2048] overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 border-b border-white/[0.05] flex items-center justify-between">
         <div>
@@ -67,19 +67,19 @@ export default function VibeReport({ analytics, creatorHandle }: Props) {
             value={`${communityAlignmentPct}%`}
             sub={alignmentLabel}
             trend={alignmentTrend}
-            accent="border-white/[0.06] bg-white/[0.02]"
+            accent="border-white/[0.10] bg-white/[0.05]"
           />
           <Stat
             label="Community Tier Depth"
             value={tierDepth}
             sub="Median grade (50th percentile)"
-            accent="border-white/[0.06] bg-white/[0.02]"
+            accent="border-white/[0.10] bg-white/[0.05]"
           />
           <Stat
             label="High-Signal Ratio"
             value={`${depthVectorPct}%`}
             sub={depthLabel}
-            accent="border-white/[0.06] bg-white/[0.02]"
+            accent="border-white/[0.10] bg-white/[0.05]"
           />
         </div>
 

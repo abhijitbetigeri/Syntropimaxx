@@ -222,7 +222,7 @@ export default function Home() {
         <div className="relative rounded-2xl overflow-hidden">
           {/* gradient border trick */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-600/40 via-indigo-500/30 to-purple-600/40 p-px">
-            <div className="h-full w-full rounded-2xl bg-[#0e0e24]" />
+            <div className="h-full w-full rounded-2xl bg-[#181940]" />
           </div>
           <div className="relative px-6 py-6">
             <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">
@@ -357,6 +357,42 @@ export default function Home() {
               source={auditState?.source}
               loading={auditLoading}
             />
+          </div>
+        )}
+
+        {/* ── Prompt Chips ── */}
+        {blueprintState && (
+          <div className="rounded-2xl border border-white/[0.10] bg-[#1e2048] overflow-hidden">
+            <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+              <div>
+                <h3 className="text-[13px] font-bold text-white">
+                  Contextual Prompt Chips
+                  <span className="text-slate-500 font-normal ml-1.5">// Community Conversation Starters</span>
+                </h3>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Pin these as top comments to guide your audience toward high-signal engagement
+                </p>
+              </div>
+              <span className="shrink-0 text-[11px] text-indigo-400 bg-indigo-400/10 border border-indigo-400/20 px-2.5 py-1 rounded-full font-medium">
+                {blueprintState.vibeBlueprint.contextual_prompts.prompt_chips.length} chips
+              </span>
+            </div>
+            <div className="px-5 py-5">
+              <div className="flex flex-wrap gap-2.5">
+                {blueprintState.vibeBlueprint.contextual_prompts.prompt_chips.map((chip) => (
+                  <span
+                    key={chip}
+                    className="inline-block px-4 py-2 rounded-full bg-indigo-500/10 text-indigo-200 text-sm font-medium border border-indigo-500/25 hover:bg-indigo-500/20 hover:border-indigo-400/40 transition-all cursor-default"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-600 mt-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block" />
+                Principle: {blueprintState.vibeBlueprint.contextual_prompts.humanebench_principle.replace(/-/g, ' ')}
+              </p>
+            </div>
           </div>
         )}
 

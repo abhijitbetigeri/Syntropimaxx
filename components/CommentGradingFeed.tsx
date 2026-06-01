@@ -50,7 +50,7 @@ interface Props {
 export default function CommentGradingFeed({ comments, source, loading }: Props) {
   if (loading) {
     return (
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0d0d22] p-6">
+      <div className="rounded-2xl border border-white/[0.08] bg-[#1e2048] p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm font-semibold text-slate-300">Grading with HumaneBench v3.0…</p>
@@ -69,7 +69,7 @@ export default function CommentGradingFeed({ comments, source, loading }: Props)
   const sorted = [...comments].sort((a, b) => a.score - b.score)
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-[#0d0d22] overflow-hidden flex flex-col">
+    <div className="rounded-2xl border border-white/[0.08] bg-[#1e2048] overflow-hidden flex flex-col">
       {/* Header */}
       <div className="px-5 py-4 border-b border-white/[0.05]">
         <div className="flex items-center justify-between mb-2">
