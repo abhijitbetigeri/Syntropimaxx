@@ -44,10 +44,11 @@ const GRADE_GLOW: Record<string, string> = {
 interface Props {
   comments: GradedComment[]
   source?: 'demo' | 'live'
+  evaluatedInSandbox?: boolean
   loading?: boolean
 }
 
-export default function CommentGradingFeed({ comments, source, loading }: Props) {
+export default function CommentGradingFeed({ comments, source, evaluatedInSandbox, loading }: Props) {
   if (loading) {
     return (
       <div className="rounded-2xl border border-white/[0.08] bg-[#1e2048] p-6">
@@ -80,17 +81,25 @@ export default function CommentGradingFeed({ comments, source, loading }: Props)
             </h3>
             <p className="text-[11px] text-slate-600 mt-0.5">8 HumaneBench principles · A–F scale</p>
           </div>
-          {source === 'demo' && (
-            <span className="text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-full font-medium">
-              Example set
-            </span>
-          )}
-          {source === 'live' && (
-            <span className="text-[11px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Live comments
-            </span>
-          )}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {evaluatedInSandbox && (
+              <span className="text-[11px] text-sky-400 bg-sky-400/10 border border-sky-400/20 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block" />
+                Daytona sandbox
+              </span>
+            )}
+            {source === 'demo' && (
+              <span className="text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-full font-medium">
+                Example set
+              </span>
+            )}
+            {source === 'live' && (
+              <span className="text-[11px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live comments
+              </span>
+            )}
+          </div>
         </div>
         {/* Dot legend */}
         <div className="flex items-center gap-4 flex-wrap">

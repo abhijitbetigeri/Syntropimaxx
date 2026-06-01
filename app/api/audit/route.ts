@@ -4,6 +4,7 @@ import { uploadContent } from '@/lib/tigris'
 import { generateVibeBlueprint } from '@/lib/nebius'
 import { dbInsert, db } from '@/lib/insforge'
 import { evaluateComment } from '@/lib/evaluator'
+import { isDaytonaEnabled, evaluateInSandbox } from '@/lib/daytona'
 import {
   scoreToGrade,
   generateFeedback,
@@ -13,16 +14,46 @@ import {
 } from '@/lib/grader'
 import type { ContentItem, VibeBlueprint } from '@/lib/insforge'
 
-// Evaluate a batch of raw comment strings against a blueprint, in parallel
+// Evaluate a batch of raw comment strings against a blueprint.
+// When DAYTONA_API_KEY is set, runs inside an isolated Daytona sandbox.
+// Falls back to direct in-process evaluation if Daytona is unavailable.
 async function gradeComments(
   comments: string[],
   blueprint: VibeBlueprint
-): Promise<GradedComment[]> {
+): Promise<{ graded: GradedComment[]; evaluatedInSandbox: boolean }> {
+
+  // ── Daytona path ────────────────────────────────────────────────────────────
+  if (isDaytonaEnabled()) {
+    try {
+      const items = await evaluateInSandbox(comments, blueprint)
+      const graded = items
+        .map((item) => {
+          if (!item.ok || !item.result) return null
+          const ev = item.result
+          const grade = scoreToGrade(ev.score)
+          return {
+            text: item.comment,
+            grade,
+            score: ev.score,
+            principleScores: ev.principleScores,
+            principles: ev.principles,
+            globalViolations: ev.globalViolations,
+            confidence: ev.confidence,
+            feedback: generateFeedback(grade, ev.principles, ev.globalViolations),
+          } satisfies GradedComment
+        })
+        .filter((c): c is GradedComment => c !== null)
+      return { graded, evaluatedInSandbox: true }
+    } catch (err) {
+      console.warn('[daytona] sandbox eval failed, falling back to direct:', err)
+    }
+  }
+
+  // ── Direct path (fallback) ──────────────────────────────────────────────────
   const results = await Promise.allSettled(
     comments.map((text) => evaluateComment(text, blueprint))
   )
-
-  return results
+  const graded = results
     .map((r, i) => {
       if (r.status === 'rejected') return null
       const ev = r.value
@@ -39,6 +70,7 @@ async function gradeComments(
       } satisfies GradedComment
     })
     .filter((c): c is GradedComment => c !== null)
+  return { graded, evaluatedInSandbox: false }
 }
 
 // POST /api/audit
@@ -67,10 +99,10 @@ export async function POST(request: NextRequest) {
       const platform = item.platform as 'youtube' | 'x'
       const demoComments = DEMO_COMMENTS[platform] ?? DEMO_COMMENTS.youtube
 
-      const gradedComments = await gradeComments(demoComments, blueprint)
+      const { graded: gradedComments, evaluatedInSandbox } = await gradeComments(demoComments, blueprint)
       const analytics = computeAnalytics(gradedComments)
 
-      return Response.json({ gradedComments, analytics, source: 'demo' })
+      return Response.json({ gradedComments, analytics, source: 'demo', evaluatedInSandbox })
     } catch (err) {
       console.error('[audit:demo]', err)
       return Response.json({ error: 'Audit failed' }, { status: 500 })
@@ -122,7 +154,7 @@ export async function POST(request: NextRequest) {
         ? content.rawComments
         : DEMO_COMMENTS[platform]
 
-    const gradedComments = await gradeComments(commentsToGrade, blueprint)
+    const { graded: gradedComments, evaluatedInSandbox } = await gradeComments(commentsToGrade, blueprint)
     const analytics = computeAnalytics(gradedComments)
 
     return Response.json({
@@ -135,6 +167,7 @@ export async function POST(request: NextRequest) {
       gradedComments,
       analytics,
       source: content.rawComments.length >= 3 ? 'live' : 'demo',
+      evaluatedInSandbox,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Audit failed'

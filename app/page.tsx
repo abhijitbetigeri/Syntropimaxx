@@ -90,6 +90,7 @@ interface AuditState {
   gradedComments: GradedComment[]
   analytics: AuditAnalytics
   source: 'demo' | 'live'
+  evaluatedInSandbox?: boolean
 }
 
 export default function Home() {
@@ -113,7 +114,7 @@ export default function Home() {
       })
       const data = await res.json()
       if (res.ok) {
-        setAuditState({ gradedComments: data.gradedComments, analytics: data.analytics, source: data.source })
+        setAuditState({ gradedComments: data.gradedComments, analytics: data.analytics, source: data.source, evaluatedInSandbox: data.evaluatedInSandbox })
       }
     } catch {
       // audit failure is non-fatal — blueprint still shows
@@ -180,7 +181,7 @@ export default function Home() {
           contentUrl: data.contentUrl,
           isLive: true,
         })
-        setAuditState({ gradedComments: data.gradedComments, analytics: data.analytics, source: data.source })
+        setAuditState({ gradedComments: data.gradedComments, analytics: data.analytics, source: data.source, evaluatedInSandbox: data.evaluatedInSandbox })
         setLiveUrl('')
       }
     } catch {
@@ -355,6 +356,7 @@ export default function Home() {
             <CommentGradingFeed
               comments={auditState?.gradedComments ?? []}
               source={auditState?.source}
+              evaluatedInSandbox={auditState?.evaluatedInSandbox}
               loading={auditLoading}
             />
           </div>
