@@ -60,7 +60,8 @@ Each comment is scored +1.0 / +0.5 / 0 / −0.5 / −1.0 on all 8 axes. The aver
 | **Object storage** | Tigris (S3-compatible) | Transcript and primary content storage |
 | **Database / BaaS** | InsForge | Postgres-backed content items, comments, blueprints |
 | **Deployment** | Vercel via InsForge CLI | Production hosting |
-| **Dev environments** | Daytona | One-command reproducible dev containers |
+| **Sandbox runtime** | Daytona | Isolated, ephemeral containers for HumaneBench evaluation |
+| **Dev environments** | Daytona | One-command reproducible contributor workspaces |
 
 ---
 
@@ -87,14 +88,17 @@ Creator pastes URL
        │
        ├─► InsForge DB  (persist content_item + blueprint)
        │
-       └─► Nebius Qwen3-32B  (grade each comment in parallel)
-             └─ 8 principle scores → avg → A–F grade + feedback
-                      │
-                      ▼
-             InsForge DB  (persist graded comments)
-                      │
-                      ▼
-         CommentGradingFeed + VibeReport  (creator dashboard)
+       └─► Daytona Sandbox  (ephemeral isolated container)
+             │
+             └─► Nebius Qwen3-32B  (grade each comment in parallel)
+                   └─ 8 principle scores → avg → A–F grade + feedback
+                            │
+                            ▼
+                   Daytona Sandbox destroyed ◄── fire-and-forget cleanup
+                            │
+                            ▼
+               CommentGradingFeed + VibeReport  (creator dashboard)
+               + "Daytona sandbox" badge shown when evaluated in isolation
 ```
 
 ---
@@ -111,6 +115,7 @@ app/
     ingest/route.ts         # URL ingestion
 
 lib/
+  daytona.ts                # Sandbox lifecycle + self-contained eval runner
   evaluator.ts              # HumaneBench v3.0 prompt + Qwen3-32B judge
   grader.ts                 # A–F mapping, feedback generation, analytics
   apify.ts                  # YouTube + X scraping with rawComments
@@ -127,15 +132,43 @@ components/
 
 ---
 
-## One-Click Dev Environment with Daytona
+## Daytona Integration
 
-[Daytona](https://daytona.io) spins up a fully configured, containerised dev environment from the repo in one command — Node 20, all extensions, dev server auto-started on port 3000.
+Daytona plays two distinct roles in this project.
+
+---
+
+### Role 1 — Evaluation Runtime (the core use case)
+
+Every HumaneBench audit runs inside an **ephemeral Daytona sandbox**. When a creator pastes a URL, `lib/daytona.ts` does:
+
+```
+createSandbox()
+  → write /tmp/input.json  (comments + blueprint + Nebius credentials)
+  → write /tmp/eval.mjs    (self-contained HumaneBench eval script)
+  → node /tmp/eval.mjs     (grades all comments in parallel, ~2s)
+  → destroySandbox()       (fire-and-forget cleanup)
+```
+
+**Why this matters:**
+- **Isolation** — each audit runs in a clean container; no cross-contamination between requests
+- **Reproducibility** — the eval environment is identical every time (Node 25, built-in `fetch`, no npm installs)
+- **Security** — LLM API keys are injected into the sandbox at runtime, never logged or shared across calls
+- **Portability** — the eval script (`EVAL_SCRIPT` in `lib/daytona.ts`) is self-contained: the full HumaneBench rubric, validation logic, and Nebius calls are inlined as a single Node ESM module
+
+When `DAYTONA_API_KEY` is set, the UI shows a sky-blue **"Daytona sandbox"** badge on the Comment Grading Feed to indicate that the evaluation ran in isolation.
+
+If `DAYTONA_API_KEY` is absent or the sandbox call fails, the system automatically falls back to direct in-process evaluation — no degraded experience for the creator.
+
+**Key file:** `lib/daytona.ts` — sandbox create/exec/destroy + `evaluateInSandbox()` export
+
+---
+
+### Role 2 — One-Click Dev Environment
+
+Daytona also spins up a fully configured contributor workspace in one command:
 
 ```bash
-# Install Daytona (if not already)
-curl -sfL https://download.daytona.io/daytona/install.sh | sudo bash
-
-# Create the workspace straight from GitHub
 daytona create https://github.com/abhijitbetigeri/Syntropimaxx
 ```
 
@@ -186,6 +219,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `TIGRIS_SECRET_ACCESS_KEY` | Tigris secret key |
 | `TIGRIS_BUCKET_NAME` | Tigris bucket name |
 | `APIFY_TOKEN` | Apify API token |
+| `DAYTONA_API_KEY` | Daytona API key — enables sandbox evaluation runtime (optional; falls back to direct eval if absent) |
 
 ---
 
