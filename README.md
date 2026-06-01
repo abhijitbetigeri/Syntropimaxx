@@ -60,6 +60,7 @@ Each comment is scored +1.0 / +0.5 / 0 / −0.5 / −1.0 on all 8 axes. The aver
 | **Object storage** | Tigris (S3-compatible) | Transcript and primary content storage |
 | **Database / BaaS** | InsForge | Postgres-backed content items, comments, blueprints |
 | **Deployment** | Vercel via InsForge CLI | Production hosting |
+| **Dev environments** | Daytona | One-command reproducible dev containers |
 
 ---
 
@@ -123,6 +124,29 @@ components/
   CommentGradingFeed.tsx    # A–F graded comment list
   VibeReport.tsx            # Aggregate analytics dashboard
 ```
+
+---
+
+## One-Click Dev Environment with Daytona
+
+[Daytona](https://daytona.io) spins up a fully configured, containerised dev environment from the repo in one command — Node 20, all extensions, dev server auto-started on port 3000.
+
+```bash
+# Install Daytona (if not already)
+curl -sfL https://download.daytona.io/daytona/install.sh | sudo bash
+
+# Create the workspace straight from GitHub
+daytona create https://github.com/abhijitbetigeri/Syntropimaxx
+```
+
+Daytona reads `.devcontainer/devcontainer.json` and:
+- Provisions a Node 20 container
+- Runs `npm install` automatically
+- Starts `npm run dev` on container start
+- Forwards port 3000 and opens it in the browser
+- Installs Tailwind CSS IntelliSense, ESLint, Prettier, and TypeScript extensions
+
+> **Env vars**: set the variables listed below in your local shell before running `daytona create` — they're forwarded into the container via `remoteEnv`.
 
 ---
 
