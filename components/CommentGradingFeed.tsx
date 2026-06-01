@@ -1,29 +1,31 @@
 'use client'
 import { gradeStyle, type GradedComment } from '@/lib/grader'
 
-const PRINCIPLE_SHORT: Record<string, string> = {
-  respect_attention:    'Attn',
-  meaningful_choices:   'Choice',
-  enhance_capabilities: 'Growth',
-  dignity_safety:       'Safety',
-  healthy_relationships:'Bound',
-  longterm_wellbeing:   'Well',
-  transparency_honesty: 'Honest',
-  equity_inclusion:     'Equity',
+const PRINCIPLE_LABEL: Record<string, string> = {
+  respect_attention:    'Respect Attention',
+  meaningful_choices:   'Meaningful Choices',
+  enhance_capabilities: 'Enhance Capabilities',
+  dignity_safety:       'Dignity & Safety',
+  healthy_relationships:'Healthy Relationships',
+  longterm_wellbeing:   'Long-term Wellbeing',
+  transparency_honesty: 'Transparency & Honesty',
+  equity_inclusion:     'Equity & Inclusion',
 }
 
 function PrincipleDots({ principles }: { principles: GradedComment['principles'] }) {
   return (
-    <div className="flex gap-1 flex-wrap mt-2">
+    <div className="flex gap-1.5 flex-wrap mt-2">
       {principles.map((p) => {
         const color =
           p.score >= 0.5 ? 'bg-emerald-400' :
           p.score >= 0   ? 'bg-amber-400' : 'bg-red-400'
+        const label = PRINCIPLE_LABEL[p.name] ?? p.name
+        const scoreStr = `${p.score > 0 ? '+' : ''}${p.score}`
         return (
           <span
             key={p.name}
-            title={`${PRINCIPLE_SHORT[p.name] ?? p.name}: ${p.score > 0 ? '+' : ''}${p.score}`}
-            className={`w-2 h-2 rounded-full ${color}`}
+            title={`${label}: ${scoreStr}`}
+            className={`w-2.5 h-2.5 rounded-full ${color} cursor-help`}
           />
         )
       })}
@@ -69,25 +71,41 @@ export default function CommentGradingFeed({ comments, source, loading }: Props)
   return (
     <div className="rounded-2xl border border-white/[0.08] bg-[#0d0d22] overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.05]">
-        <div>
-          <h3 className="text-[13px] font-bold text-white">
-            Vibe Audit
-            <span className="text-slate-500 font-normal ml-1.5">// Comment Grading Feed</span>
-          </h3>
-          <p className="text-[11px] text-slate-600 mt-0.5">8 principles · A–F scale</p>
+      <div className="px-5 py-4 border-b border-white/[0.05]">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h3 className="text-[13px] font-bold text-white">
+              Vibe Audit
+              <span className="text-slate-500 font-normal ml-1.5">// Comment Grading Feed</span>
+            </h3>
+            <p className="text-[11px] text-slate-600 mt-0.5">8 HumaneBench principles · A–F scale</p>
+          </div>
+          {source === 'demo' && (
+            <span className="text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-full font-medium">
+              Example set
+            </span>
+          )}
+          {source === 'live' && (
+            <span className="text-[11px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live comments
+            </span>
+          )}
         </div>
-        {source === 'demo' && (
-          <span className="text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-full font-medium">
-            Example set
+        {/* Dot legend */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <span className="text-[10px] text-slate-600 font-semibold uppercase tracking-wider">Dots =</span>
+          <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />Passed (+0.5 / +1.0)
           </span>
-        )}
-        {source === 'live' && (
-          <span className="text-[11px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Live comments
+          <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />Neutral (0)
           </span>
-        )}
+          <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />Failed (−0.5 / −1.0)
+          </span>
+          <span className="text-[10px] text-slate-700">Hover a dot for its principle</span>
+        </div>
       </div>
 
       {/* Comment rows */}

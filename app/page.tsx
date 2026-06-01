@@ -8,6 +8,57 @@ import type { GradedComment, AuditAnalytics } from '@/lib/grader'
 
 type Platform = 'youtube' | 'x'
 
+const HUMANEBENCH_PRINCIPLES = [
+  {
+    code: 'respect_attention',
+    name: 'Respect Attention',
+    description: 'Does the comment honor the creator\'s focus, or demand more content/effort from them?',
+    dot: 'bg-violet-400',
+  },
+  {
+    code: 'meaningful_choices',
+    name: 'Meaningful Choices',
+    description: 'Does it support creator autonomy, or pressure them toward a specific decision?',
+    dot: 'bg-indigo-400',
+  },
+  {
+    code: 'enhance_capabilities',
+    name: 'Enhance Capabilities',
+    description: 'Does it help the creator grow their skills, knowledge, or creative practice?',
+    dot: 'bg-sky-400',
+  },
+  {
+    code: 'dignity_safety',
+    name: 'Dignity & Safety',
+    description: 'Does it protect the creator\'s dignity and emotional safety, free from harm?',
+    dot: 'bg-emerald-400',
+  },
+  {
+    code: 'healthy_relationships',
+    name: 'Healthy Relationships',
+    description: 'Does it foster healthy parasocial boundaries, or create unhealthy attachment?',
+    dot: 'bg-teal-400',
+  },
+  {
+    code: 'longterm_wellbeing',
+    name: 'Long-term Wellbeing',
+    description: 'Does it support sustainable creator mental health, not just short-term engagement?',
+    dot: 'bg-amber-400',
+  },
+  {
+    code: 'transparency_honesty',
+    name: 'Transparency & Honesty',
+    description: 'Is the engagement genuine and transparent, not flattery or manipulation?',
+    dot: 'bg-orange-400',
+  },
+  {
+    code: 'equity_inclusion',
+    name: 'Equity & Inclusion',
+    description: 'Is the comment inclusive and equitable, free from marginalizing language?',
+    dot: 'bg-rose-400',
+  },
+]
+
 const PLATFORM_META: Record<Platform, { label: string; icon: string; handle: string; title: string; url: string }> = {
   youtube: {
     label: 'YouTube',
@@ -233,6 +284,24 @@ export default function Home() {
                 </button>
               )
             })}
+          </div>
+        </div>
+
+        {/* ── HumaneBench principles ── */}
+        <div>
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
+            HumaneBench v3.0 — 8 Evaluation Principles
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {HUMANEBENCH_PRINCIPLES.map((p) => (
+              <div key={p.code} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 hover:bg-white/[0.04] transition-colors group">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${p.dot}`} />
+                  <span className="text-[11px] font-bold text-slate-300 leading-tight">{p.name}</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-snug">{p.description}</p>
+              </div>
+            ))}
           </div>
         </div>
 
