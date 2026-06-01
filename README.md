@@ -10,7 +10,7 @@ Built for the **Applied Intelligence Hackathon 2026**.
 
 **Live:** [https://23hpjej3.insforge.site](https://23hpjej3.insforge.site)
 
-> **Demo video:** _[add link here]_
+> **Demo video:** [Watch on Loom](https://www.loom.com/share/bfdfbb55f4514e119382189e68ab739a)
 
 ---
 
