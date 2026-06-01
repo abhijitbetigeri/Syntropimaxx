@@ -191,6 +191,6 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Hackathon
 
-Built for the **Applied Intelligence Hackathon 2026** — using AI to foster human flourishing in creator communities.
+Built for the **Applied Intelligence Hackathon 2026** — using AI to foster human flourishing in content creation community.
 
 > _"Syntropimaxx — Social optimization sandboxes for human flourishing"_
