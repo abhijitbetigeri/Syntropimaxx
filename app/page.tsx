@@ -8,14 +8,13 @@ import type { GradedComment, AuditAnalytics } from '@/lib/grader'
 
 type Platform = 'youtube' | 'x'
 
-const PLATFORM_META: Record<Platform, { label: string; icon: string; handle: string; title: string; url: string; color: string }> = {
+const PLATFORM_META: Record<Platform, { label: string; icon: string; handle: string; title: string; url: string }> = {
   youtube: {
     label: 'YouTube',
     icon: '▶',
     handle: '@alexcreates',
     title: "I Almost Quit Creating. Here's What Stopped Me.",
     url: 'https://www.youtube.com/watch?v=example_burnout',
-    color: 'bg-red-500',
   },
   x: {
     label: 'X / Twitter',
@@ -23,7 +22,6 @@ const PLATFORM_META: Record<Platform, { label: string; icon: string; handle: str
     handle: '@jordanbuilds',
     title: 'Thread: On shipping in public and the cost nobody talks about',
     url: 'https://x.com/jordanbuilds/status/1234567890',
-    color: 'bg-black',
   },
 }
 
@@ -96,7 +94,6 @@ export default function Home() {
         contentUrl: PLATFORM_META[p].url,
       })
       setLoading(false)
-      // kick off grading in parallel — blueprint shows immediately
       runAudit(data.contentItemId)
     } catch {
       setError('Network error — check the dev server logs')
@@ -113,7 +110,6 @@ export default function Home() {
     setLoading(true)
     setLoadingMsg('Scraping via Apify → generating Vibe Blueprint → grading comments...')
     try {
-      // /api/audit handles the full pipeline when given a url
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -144,61 +140,79 @@ export default function Home() {
   }
 
   const displayHandle = blueprintState?.creatorHandle ?? PLATFORM_META[platform].handle
-  const displayTitle = blueprintState?.title ?? PLATFORM_META[platform].title
-  const displayUrl = blueprintState?.contentUrl ?? PLATFORM_META[platform].url
-  const displayIcon = PLATFORM_META[blueprintState?.platform ?? platform].icon
-  const displayColor = PLATFORM_META[blueprintState?.platform ?? platform].color
+  const displayTitle  = blueprintState?.title ?? PLATFORM_META[platform].title
+  const displayUrl    = blueprintState?.contentUrl ?? PLATFORM_META[platform].url
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <header className="border-b border-slate-800 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-white">Syntropimaxx</h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Social optimization sandboxes for human flourishing
-            </p>
+    <div className="min-h-screen flex flex-col">
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#08081a]/80 backdrop-blur-xl">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm">
+              S
+            </div>
+            <div>
+              <h1 className="text-[15px] font-bold text-white leading-none">Syntropimaxx</h1>
+              <p className="text-[10px] text-slate-500 mt-0.5 leading-none">Creator Vibe Intelligence</p>
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-xs text-slate-500">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400"></span>
-            HumaneBench v3.0
+          <div className="flex items-center gap-2 text-[11px] text-slate-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+            HumaneBench v3.0 · 8 principles
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10 space-y-8">
 
-        {/* Live URL input */}
-        <div className="rounded-xl border border-violet-800/60 bg-violet-950/40 px-5 py-4">
-          <p className="text-xs font-semibold text-violet-400 uppercase tracking-wide mb-2">
-            Paste any creator link
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={liveUrl}
-              onChange={(e) => setLiveUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && ingestLiveUrl()}
-              placeholder="YouTube video: youtube.com/watch?v=...  ·  X post: x.com/user/status/..."
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
-            />
-            <button
-              onClick={ingestLiveUrl}
-              disabled={!liveUrl.trim() || loading}
-              className="px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-semibold disabled:opacity-40 hover:bg-violet-500 transition-colors whitespace-nowrap"
-            >
-              Analyse
-            </button>
+        {/* ── Hero URL input ── */}
+        <div className="relative rounded-2xl overflow-hidden">
+          {/* gradient border trick */}
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-600/40 via-indigo-500/30 to-purple-600/40 p-px">
+            <div className="h-full w-full rounded-2xl bg-[#0e0e24]" />
           </div>
-          <p className="text-xs text-slate-600 mt-1.5">
-            Scraped via Apify · stored in Tigris · graded with HumaneBench v3.0
-          </p>
+          <div className="relative px-6 py-6">
+            <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">
+              Creator Intelligence · Paste any link
+            </p>
+            <p className="text-sm text-slate-400 mb-4">
+              Drop a YouTube video or X/Twitter post URL — we'll scrape it, generate a Vibe Blueprint, and grade every comment A–F.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={liveUrl}
+                onChange={(e) => setLiveUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && ingestLiveUrl()}
+                placeholder="youtube.com/watch?v=...  or  x.com/user/status/..."
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500/40 transition-all"
+              />
+              <button
+                onClick={ingestLiveUrl}
+                disabled={!liveUrl.trim() || loading}
+                className="px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold disabled:opacity-40 hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg shadow-violet-900/40 whitespace-nowrap"
+              >
+                Analyse →
+              </button>
+            </div>
+            <div className="flex items-center gap-4 mt-3 text-[11px] text-slate-600">
+              <span>Apify scraping</span>
+              <span className="w-1 h-1 rounded-full bg-slate-700 inline-block" />
+              <span>Nebius LLM</span>
+              <span className="w-1 h-1 rounded-full bg-slate-700 inline-block" />
+              <span>Tigris storage</span>
+              <span className="w-1 h-1 rounded-full bg-slate-700 inline-block" />
+              <span>InsForge DB</span>
+            </div>
+          </div>
         </div>
 
-        {/* Demo quick-load */}
+        {/* ── Demo buttons ── */}
         <div>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            Or load demo content
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
+            Or try a demo
           </p>
           <div className="flex gap-3">
             {(Object.keys(PLATFORM_META) as Platform[]).map((p) => {
@@ -208,13 +222,13 @@ export default function Home() {
                 <button
                   key={p}
                   onClick={() => loadBlueprint(p)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                     isActive
-                      ? 'border-violet-500 bg-violet-900/30 text-violet-300'
-                      : 'border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-600 hover:text-slate-300'
+                      ? 'border-violet-500/60 bg-violet-500/10 text-violet-300 shadow-lg shadow-violet-900/20'
+                      : 'border-white/[0.08] bg-white/[0.03] text-slate-400 hover:border-white/[0.15] hover:text-slate-200 hover:bg-white/[0.06]'
                   }`}
                 >
-                  <span>{m.icon}</span>
+                  <span className={`text-base ${p === 'youtube' ? 'text-red-400' : 'text-slate-300'}`}>{m.icon}</span>
                   {m.label}
                 </button>
               )
@@ -222,50 +236,46 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Content info bar */}
+        {/* ── Content info bar ── */}
         {(blueprintState || loading) && (
-          <div className="rounded-xl border border-slate-700 bg-slate-900 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <span className={`${displayColor} text-white text-sm w-8 h-8 rounded-lg flex items-center justify-center font-bold shrink-0`}>
-                {displayIcon}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-200 truncate">{displayTitle}</p>
-                <p className="text-xs text-slate-500">
-                  {displayHandle} ·{' '}
-                  <a href={displayUrl} target="_blank" rel="noreferrer" className="underline hover:text-slate-400">
-                    {displayUrl}
-                  </a>
-                  {blueprintState?.isLive && (
-                    <span className="ml-2 inline-flex items-center gap-1 text-green-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
-                      Live via Apify
-                    </span>
-                  )}
-                </p>
-              </div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
+            <div className="shrink-0 w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-sm">
+              {PLATFORM_META[blueprintState?.platform ?? platform].icon}
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-slate-200 truncate">{displayTitle}</p>
+              <p className="text-xs text-slate-500 truncate">
+                {displayHandle} · <a href={displayUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-slate-300">{displayUrl}</a>
+              </p>
+            </div>
+            {blueprintState?.isLive && (
+              <span className="shrink-0 flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live
+              </span>
+            )}
           </div>
         )}
 
-        {/* Blueprint loading */}
+        {/* ── Blueprint loading state ── */}
         {loading && (
-          <div className="flex items-center gap-3 rounded-xl bg-slate-900 border border-slate-700 px-5 py-6">
-            <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin shrink-0" />
+          <div className="flex items-center gap-4 rounded-xl border border-violet-500/20 bg-violet-500/5 px-5 py-5">
+            <div className="shrink-0 w-8 h-8 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
             <div>
-              <p className="text-sm font-medium text-slate-300">Generating Vibe Blueprint...</p>
+              <p className="text-sm font-semibold text-violet-300">Generating Vibe Blueprint</p>
               <p className="text-xs text-slate-500 mt-0.5">{loadingMsg}</p>
             </div>
           </div>
         )}
 
+        {/* ── Error ── */}
         {error && (
-          <div className="rounded-xl bg-red-950/40 border border-red-800 px-4 py-3 text-sm text-red-400">
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
         )}
 
-        {/* Main grid: blueprint (left) + comment grading feed (right) */}
+        {/* ── Main grid ── */}
         {blueprintState && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <VibeBlueprintCard
@@ -281,32 +291,31 @@ export default function Home() {
           </div>
         )}
 
-        {/* Analytics report — full width below grid */}
+        {/* ── Analytics report ── */}
         {blueprintState && auditState && (
-          <VibeReport
-            analytics={auditState.analytics}
-            creatorHandle={displayHandle}
-          />
+          <VibeReport analytics={auditState.analytics} creatorHandle={displayHandle} />
         )}
 
-        {/* Empty state */}
+        {/* ── Empty state ── */}
         {!blueprintState && !loading && !error && (
-          <div className="text-center py-16 text-slate-600">
-            <p className="text-4xl mb-3">⚡</p>
-            <p className="text-sm font-medium text-slate-500">
-              Paste a creator link or select a demo above
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/20 mb-5">
+              <span className="text-2xl">⚡</span>
+            </div>
+            <p className="text-base font-semibold text-slate-300 mb-2">
+              Grade your community, instantly
             </p>
-            <p className="text-xs mt-1">
-              HumaneBench v3.0 grades every comment A–F across 8 principles
+            <p className="text-sm text-slate-600 max-w-xs mx-auto leading-relaxed">
+              HumaneBench v3.0 evaluates every comment across 8 principles and maps the result to an A–F grade with actionable feedback.
             </p>
           </div>
         )}
       </main>
 
-      <footer className="border-t border-slate-800 mt-16 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between text-xs text-slate-600">
-          <span>Syntropimaxx · Applied Intelligence Hackathon</span>
-          <span>HumaneBench · Tigris · InsForge · Apify · Nebius</span>
+      <footer className="border-t border-white/[0.05] px-6 py-4 mt-8">
+        <div className="max-w-5xl mx-auto flex items-center justify-between text-[11px] text-slate-700">
+          <span>Syntropimaxx · Applied Intelligence Hackathon 2026</span>
+          <span>HumaneBench · Nebius · Tigris · InsForge · Apify</span>
         </div>
       </footer>
     </div>
