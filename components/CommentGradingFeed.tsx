@@ -45,10 +45,11 @@ interface Props {
   comments: GradedComment[]
   source?: 'demo' | 'live'
   evaluatedInSandbox?: boolean
+  commentsUnavailable?: boolean
   loading?: boolean
 }
 
-export default function CommentGradingFeed({ comments, source, evaluatedInSandbox, loading }: Props) {
+export default function CommentGradingFeed({ comments, source, evaluatedInSandbox, commentsUnavailable, loading }: Props) {
   if (loading) {
     return (
       <div className="rounded-2xl border border-white/[0.08] bg-[#1e2048] p-6">
@@ -61,6 +62,18 @@ export default function CommentGradingFeed({ comments, source, evaluatedInSandbo
             <div key={i} className="h-16 rounded-xl bg-white/[0.03] animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
           ))}
         </div>
+      </div>
+    )
+  }
+
+  if (commentsUnavailable) {
+    return (
+      <div className="rounded-2xl border border-white/[0.08] bg-[#1e2048] p-6 flex flex-col items-center justify-center gap-3 min-h-[200px]">
+        <span className="text-2xl">💬</span>
+        <p className="text-sm font-semibold text-slate-300">Comments unavailable</p>
+        <p className="text-[12px] text-slate-500 text-center max-w-[260px]">
+          Comments are disabled or restricted on this video. The Vibe Blueprint above was still generated from the transcript.
+        </p>
       </div>
     )
   }

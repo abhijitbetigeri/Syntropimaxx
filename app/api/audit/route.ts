@@ -148,13 +148,23 @@ export async function POST(request: NextRequest) {
       vibe_blueprint: blueprint,
     })
 
-    // Use real Apify comments if available, otherwise fall back to demo set
-    const commentsToGrade =
-      content.rawComments.length >= 3
-        ? content.rawComments
-        : DEMO_COMMENTS[platform]
+    if (content.rawComments.length === 0) {
+      return Response.json({
+        contentItemId: stored.id,
+        creatorHandle: content.creatorHandle,
+        title: content.title,
+        platform,
+        contentUrl: url,
+        vibeBlueprint: blueprint,
+        gradedComments: [],
+        analytics: computeAnalytics([]),
+        source: 'live' as const,
+        commentsUnavailable: true,
+        evaluatedInSandbox: false,
+      })
+    }
 
-    const { graded: gradedComments, evaluatedInSandbox } = await gradeComments(commentsToGrade, blueprint)
+    const { graded: gradedComments, evaluatedInSandbox } = await gradeComments(content.rawComments, blueprint)
     const analytics = computeAnalytics(gradedComments)
 
     return Response.json({
@@ -166,7 +176,7 @@ export async function POST(request: NextRequest) {
       vibeBlueprint: blueprint,
       gradedComments,
       analytics,
-      source: content.rawComments.length >= 3 ? 'live' : 'demo',
+      source: 'live' as const,
       evaluatedInSandbox,
     })
   } catch (err) {

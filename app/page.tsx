@@ -91,6 +91,7 @@ interface AuditState {
   analytics: AuditAnalytics
   source: 'demo' | 'live'
   evaluatedInSandbox?: boolean
+  commentsUnavailable?: boolean
 }
 
 export default function Home() {
@@ -181,7 +182,7 @@ export default function Home() {
           contentUrl: data.contentUrl,
           isLive: true,
         })
-        setAuditState({ gradedComments: data.gradedComments, analytics: data.analytics, source: data.source, evaluatedInSandbox: data.evaluatedInSandbox })
+        setAuditState({ gradedComments: data.gradedComments, analytics: data.analytics, source: data.source, evaluatedInSandbox: data.evaluatedInSandbox, commentsUnavailable: data.commentsUnavailable })
         setLiveUrl('')
       }
     } catch {
@@ -357,6 +358,7 @@ export default function Home() {
               comments={auditState?.gradedComments ?? []}
               source={auditState?.source}
               evaluatedInSandbox={auditState?.evaluatedInSandbox}
+              commentsUnavailable={auditState?.commentsUnavailable}
               loading={auditLoading}
             />
           </div>

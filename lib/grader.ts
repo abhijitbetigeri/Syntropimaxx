@@ -118,7 +118,8 @@ export function computeAnalytics(comments: GradedComment[]): AuditAnalytics {
   return { totalGraded: n, avgScore, communityAlignmentPct, tierDepth, depthVectorPct, gradeDistribution }
 }
 
-// Representative demo comments per platform — evaluated fresh via HumaneBench each time
+// Representative demo comments per platform — used only for the explicit demo path
+// (when a user clicks a pre-loaded demo, not when grading a live URL).
 export const DEMO_COMMENTS: Record<'youtube' | 'x', string[]> = {
   youtube: [
     'Change your thumbnail contrast ratio to increase your CTR. Growth hack 101.',
