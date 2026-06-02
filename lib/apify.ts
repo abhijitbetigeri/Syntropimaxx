@@ -56,6 +56,12 @@ export async function scrapeYouTube(url: string): Promise<NormalizedContent> {
   if (!items.length) throw new Error('YouTube scraper returned no results')
 
   const item = items[0]
+  console.log('[apify:youtube] total items:', items.length)
+  console.log('[apify:youtube] items[0] keys:', Object.keys(item))
+  if (items.length > 1) {
+    console.log('[apify:youtube] items[1] sample:', JSON.stringify(items[1]).slice(0, 300))
+  }
+
   const subtitleText = extractSubtitles(item)
   const description = (item.description as string) ?? ''
   const title = (item.title as string) ?? 'Untitled'
@@ -65,8 +71,26 @@ export async function scrapeYouTube(url: string): Promise<NormalizedContent> {
     ? `TITLE: ${title}\n\nTRANSCRIPT:\n${subtitleText}`
     : `TITLE: ${title}\n\nDESCRIPTION:\n${description}`
 
-  // Extract comments if the scraper returned them
-  const rawComments = extractComments(item)
+  // Pattern A: comments nested inside items[0] (e.g. items[0].comments[])
+  let rawComments = extractComments(item)
+  console.log('[apify:youtube] nested comments found:', rawComments.length)
+
+  // Pattern B: actor writes each comment as a separate dataset item alongside the video item
+  if (rawComments.length === 0 && items.length > 1) {
+    rawComments = items
+      .slice(1)
+      .map((c) => {
+        const ci = c as Record<string, unknown>
+        return (
+          (ci.text ?? ci.textDisplay ?? ci.comment ?? ci.commentText ?? ci.content ?? '') as string
+        ).trim()
+      })
+      .filter((t) => t.length > 0)
+      .slice(0, 15)
+    console.log('[apify:youtube] flat comments found:', rawComments.length)
+  }
+
+  console.log('[apify:youtube] rawComments final:', rawComments.length)
 
   return {
     platform: 'youtube',
@@ -79,11 +103,18 @@ export async function scrapeYouTube(url: string): Promise<NormalizedContent> {
 }
 
 function extractComments(item: Record<string, unknown>): string[] {
-  const comments = item.comments ?? item.commentsData ?? item.topComments
+  const comments =
+    item.comments ?? item.commentsData ?? item.topComments ??
+    item.videoComments ?? item.commentsList ?? item.replies
   if (!comments || !Array.isArray(comments)) return []
   return (comments as Record<string, unknown>[])
-    .map((c) => (typeof c === 'string' ? c : ((c.text ?? c.textDisplay ?? c.comment) as string) ?? ''))
-    .filter((t) => t.trim().length > 0)
+    .map((c) =>
+      typeof c === 'string'
+        ? c
+        : ((c.text ?? c.textDisplay ?? c.comment ?? c.commentText ?? c.content) as string) ?? ''
+    )
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
     .slice(0, 15)
 }
 
