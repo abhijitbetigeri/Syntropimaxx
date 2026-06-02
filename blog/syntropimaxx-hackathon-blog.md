@@ -302,6 +302,37 @@ It returns items with a `comment` field containing the comment text. Both the vi
 
 ---
 
+### Bug 4 — Deployment hanging on videos with comments disabled
+
+**Symptom:** When testing a video where comments are turned off on YouTube, the entire request would hang indefinitely — no response, no timeout, no error shown to the user.
+
+**Cause:** The `streamers/youtube-comments-scraper` actor keeps polling for comments that will never appear. With no client-side timeout on the fetch call, the request would wait until either the Apify server-side timeout (120s) or the Vercel function max duration — whichever came first. In practice this caused the UI to appear frozen for well over a minute.
+
+**Fix:** Two layers of protection added:
+
+1. **Early exit via `commentsTurnedOff` flag** — the video metadata actor already returns a `commentsTurnedOff` field in its response. The code now checks this flag and skips the comments actor call entirely when it's `true`, returning immediately with an empty comment set.
+
+2. **Client-side `AbortSignal` timeout** — even when `commentsTurnedOff` is `false`, the comments actor call is now wrapped with `AbortSignal.timeout(35_000)`. If the actor doesn't respond within 35 seconds for any reason, the fetch is aborted and the request proceeds without comments rather than hanging.
+
+---
+
+### Bug 5 — Demo comments shown for live URL audits when real comments couldn't be fetched
+
+**Symptom:** For videos where real comments were unavailable (disabled, restricted, or too few returned), the grading feed silently fell back to a hardcoded set of demo comments — burnout-era generic comments like *"Post more consistently bro"* and *"What camera do you use?"* — and graded those against the real video's blueprint. The result looked completely wrong for any video that wasn't a burnout/vulnerability video (e.g., a technical Jane Street discussion about GPUs and trading).
+
+**Cause:** The audit route had a silent fallback: `rawComments.length >= 3 ? rawComments : DEMO_COMMENTS[platform]`. The intent was to always show something in the feed, but the demo comments were written for one specific content type and produced nonsensical grades when applied to any other.
+
+**Fix:** Removed the demo fallback from the live URL audit path entirely. The system now:
+- Uses real comments if they were fetched
+- Returns `commentsUnavailable: true` in the API response if no real comments are available
+- The UI renders a clear "💬 Comments unavailable — Comments are disabled or restricted on this video" message instead of grading unrelated demo content
+
+The Vibe Blueprint (generated from the transcript) still displays regardless — the creator still gets the content analysis even when the community grading can't run.
+
+The `DEMO_COMMENTS` set is kept only for the explicit demo button path, where the user knowingly asked for a pre-loaded example.
+
+---
+
 ## Try It
 
 **Demo video:** [Watch on Loom](https://www.loom.com/share/bfdfbb55f4514e119382189e68ab739a)
